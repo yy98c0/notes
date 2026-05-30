@@ -1,6 +1,7 @@
 import esbuild from "esbuild"
 import remarkParse from "remark-parse"
 import remarkRehype from "remark-rehype"
+import rehypeRaw from "rehype-raw"
 import { Processor, unified } from "unified"
 import { Root as MDRoot } from "remark-parse/lib"
 import { Root as HTMLRoot } from "hast"
@@ -14,6 +15,7 @@ import { QuartzLogger } from "../util/log"
 import { trace } from "../util/trace"
 import { BuildCtx, WorkerSerializableBuildCtx } from "../util/ctx"
 import { styleText } from "util"
+import { isolateTikzFences } from "../plugins/transformers/tikz"
 
 export type QuartzMdProcessor = Processor<MDRoot, MDRoot, MDRoot>
 export type QuartzHtmlProcessor = Processor<undefined, MDRoot, HTMLRoot>
@@ -39,6 +41,8 @@ export function createHtmlProcessor(ctx: BuildCtx): QuartzHtmlProcessor {
     unified()
       // MD AST -> HTML AST
       .use(remarkRehype, { allowDangerousHtml: true })
+      // Parse raw HTML nodes produced by transformers so SVG/figure markup survives
+      .use(rehypeRaw)
       // HTML AST -> HTML AST transforms
       .use(transformers.flatMap((plugin) => plugin.htmlPlugins?.(ctx) ?? []))
   )
@@ -93,6 +97,7 @@ export function createFileParser(ctx: BuildCtx, fps: FilePath[]) {
 
         // strip leading and trailing whitespace
         file.value = file.value.toString().trim()
+        file.value = isolateTikzFences(file)
 
         // Text -> Text transforms
         for (const plugin of cfg.plugins.transformers.filter((p) => p.textTransform)) {

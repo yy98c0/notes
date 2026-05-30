@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v6
         with:
@@ -24,26 +26,40 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - name: Cache dependencies
-        uses: actions/cache@v5
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Cache Quartz plugins
-        uses: actions/cache@v5
-        with:
-          path: .quartz/plugins
-          key: ${{ runner.os }}-plugins-${{ hashFiles('quartz.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-plugins-
+          cache: npm
+      - name: Install TeX Live (TikZ → SVG)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-latex-recommended \
+            texlive-pictures \
+            texlive-fonts-recommended \
+            texlive-science \
+            texlive-plain-generic \
+            dvisvgm \
+            ghostscript
+          if command -v fmtutil-sys >/dev/null 2>&1; then
+            sudo fmtutil-sys --all >/dev/null 2>&1 || true
+          fi
       - name: Install Dependencies
         run: npm ci
       - name: Install Quartz plugins
-        run: npx quartz plugin install
+        run: npx quartz plugin install --from-config
+      - name: Clear TikZ cache for reproducible CI builds
+        run: rm -rf .quartz/tikz-cache
       - name: Build Quartz
-        run: npx quartz build
+        run: npx quartz build --concurrency=1
+        env:
+          TIKZ_DEBUG: "1"
+      - name: Upload public/ on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-build-failed
+          path: public/
+          retention-days: 3
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

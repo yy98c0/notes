@@ -1,3 +1,44 @@
 @use "./variables.scss" as *;
 
 // put your custom CSS here!
+
+// TikZ SVG output (dvisvgm pipeline) — center figures in article body
+article {
+  figure:not([data-rehype-pretty-code-figure]),
+  .tikz-output {
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  figure:not([data-rehype-pretty-code-figure]) svg,
+  .tikz-output svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin-inline: auto;
+  }
+
+  // dvisvgm palette must not inherit Quartz typographic fill (Chrome overrides presentation attrs)
+  .tikz-output svg {
+    color: unset;
+
+    text,
+    tspan {
+      fill: unset;
+      stroke: unset;
+    }
+  }
+}
+
+@supports not (width: max-content) {
+  article {
+    figure:not([data-rehype-pretty-code-figure]),
+    .tikz-output {
+      display: table;
+      margin-inline: auto;
+    }
+  }
+}
