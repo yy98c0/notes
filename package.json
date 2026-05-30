@@ -1,19 +1,18 @@
 {
   "name": "@jackyzha0/quartz",
-  "description": "🌱 publish your digital garden and notes as a website",
+  "description": "Personal notes and digital garden, built with Quartz",
   "private": true,
   "version": "5.0.0",
   "type": "module",
-  "author": "jackyzha0 <j.zhao2k19@gmail.com>",
+  "author": "yy98c0",
   "license": "MIT",
-  "homepage": "https://quartz.jzhao.xyz",
+  "homepage": "https://yy98c0.github.io/notes",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jackyzha0/quartz.git"
+    "url": "https://github.com/yy98c0/notes.git"
   },
   "scripts": {
     "quartz": "./quartz/bootstrap-cli.mjs",
-    "docs": "npx quartz build --serve -d docs",
     "check": "tsc --noEmit && npx prettier . --check",
     "format": "npx prettier . --write",
     "test": "tsx --test",
@@ -30,8 +29,7 @@
     "ssg",
     "digital-garden",
     "markdown",
-    "blog",
-    "quartz"
+    "blog"
   ],
   "bin": {
     "quartz": "./quartz/bootstrap-cli.mjs"
