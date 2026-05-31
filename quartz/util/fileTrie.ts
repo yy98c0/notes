@@ -5,6 +5,7 @@ interface FileTrieData {
   slug: string
   title: string
   filePath: string
+  folderPath?: string
 }
 
 export class FileTrieNode<T extends FileTrieData = ContentDetails> {
@@ -63,10 +64,12 @@ export class FileTrieNode<T extends FileTrieData = ContentDetails> {
       throw new Error("path is empty")
     }
 
+    const effectivePath = file.folderPath?.split("/").filter(Boolean) ?? path
+
     // if we are inserting, we are a folder
     this.isFolder = true
-    const segment = path[0]
-    if (path.length === 1) {
+    const segment = effectivePath[0]
+    if (effectivePath.length === 1) {
       // base case, we are at the end of the path
       if (segment === "index") {
         // Last-insert-wins on collision. Matches the emitter's last-write-wins
@@ -76,16 +79,16 @@ export class FileTrieNode<T extends FileTrieData = ContentDetails> {
         // the fallback for any duplicates that still reach the trie.
         this.data = file
       } else {
-        this.makeChild(path, file)
+        this.makeChild(effectivePath, file)
       }
-    } else if (path.length > 1) {
+    } else if (effectivePath.length > 1) {
       // recursive case, we are not at the end of the path
       const child =
-        this.children.find((c) => c.slugSegment === segment) ?? this.makeChild(path, undefined)
+        this.children.find((c) => c.slugSegment === segment) ?? this.makeChild(effectivePath, undefined)
 
       const fileParts = file.filePath.split("/")
-      child.fileSegmentHint = fileParts.at(-path.length)
-      child.insert(path.slice(1), file)
+      child.fileSegmentHint = fileParts.at(-effectivePath.length)
+      child.insert(effectivePath.slice(1), file)
     }
   }
 

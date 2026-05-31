@@ -16,8 +16,10 @@ import {
   buildStandaloneTex,
   DEFAULT_DVISVGM_ARGS,
   extractTexLog,
+  flattenClipPathNestedGroups,
   materializeSvgGroupFills,
   resolveDvisvgmArgs,
+  stripClipPathForChrome,
   svgLooksValid,
 } from "./tikz-tex.mjs"
 
@@ -99,7 +101,11 @@ function compileToSvg(source, options = {}) {
     }
 
     const rawSvg = readFileSync(svgPath, "utf8")
-    const svg = materializeSvgGroupFills(rawSvg)
+    let svg = materializeSvgGroupFills(rawSvg)
+    if (is3d) {
+      svg = flattenClipPathNestedGroups(svg)
+      svg = stripClipPathForChrome(svg)
+    }
     if (!svgLooksValid(svg)) {
       throw new Error(`dvisvgm produced invalid SVG output\n${extractTexLog("", dvisvgm.stderr, logText)}`)
     }

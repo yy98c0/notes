@@ -16,6 +16,8 @@ import { trace } from "../util/trace"
 import { BuildCtx, WorkerSerializableBuildCtx } from "../util/ctx"
 import { styleText } from "util"
 import { isolateTikzFences } from "../plugins/transformers/tikz"
+import type { VFile } from "vfile"
+import YAML from "yaml"
 
 export type QuartzMdProcessor = Processor<MDRoot, MDRoot, MDRoot>
 export type QuartzHtmlProcessor = Processor<undefined, MDRoot, HTMLRoot>
@@ -86,6 +88,39 @@ async function transpileWorkerScript() {
   })
 }
 
+function extractCategoryFolder(file: VFile): string | undefined {
+  const raw = file.value.toString().trimStart()
+  if (!raw.startsWith("---")) return undefined
+
+  const match = raw.match(/^---\n([\s\S]*?)\n---\s*(?:\n|$)/)
+  if (!match) return undefined
+
+  try {
+    const frontmatter = YAML.parse(match[1]) as Record<string, unknown> | null
+    const category = frontmatter?.category
+    if (typeof category !== "string") return undefined
+    const normalized = category
+      .split("/")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join("/")
+    return normalized || undefined
+  } catch {
+    return undefined
+  }
+}
+
+function buildCategoryFolderPath(filePath: string, category?: string): string | undefined {
+  if (!category) return undefined
+  const segments = category.split("/").map((part) => part.trim()).filter(Boolean)
+  if (segments.length === 0 || segments.length > 3) return undefined
+  const fileStem = path.posix.basename(filePath, path.posix.extname(filePath))
+  if (segments.at(-1) === fileStem) {
+    return segments.slice(0, -1).join("/") || undefined
+  }
+  return segments.join("/")
+}
+
 export function createFileParser(ctx: BuildCtx, fps: FilePath[]) {
   const { argv, cfg } = ctx
   return async (processor: QuartzMdProcessor) => {
@@ -97,6 +132,10 @@ export function createFileParser(ctx: BuildCtx, fps: FilePath[]) {
 
         // strip leading and trailing whitespace
         file.value = file.value.toString().trim()
+        const category = buildCategoryFolderPath(
+          fp,
+          extractCategoryFolder(file),
+        )
         file.value = isolateTikzFences(file)
 
         // Text -> Text transforms
@@ -108,6 +147,9 @@ export function createFileParser(ctx: BuildCtx, fps: FilePath[]) {
         file.data.filePath = file.path as FilePath
         file.data.relativePath = path.posix.relative(argv.directory, file.path) as FilePath
         file.data.slug = slugifyFilePath(file.data.relativePath)
+        if (category) {
+          file.data.folderPath = category as FilePath
+        }
 
         const ast = processor.parse(file)
         const newAst = await processor.run(ast, file)

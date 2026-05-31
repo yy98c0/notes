@@ -19,6 +19,8 @@ export type BuildTimeTrieData = QuartzPluginData & {
   slug: string
   title: string
   filePath: string
+  /** Optional category-based folder path used for folder classification. */
+  folderPath?: string
 }
 
 /**

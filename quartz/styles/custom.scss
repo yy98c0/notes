@@ -1,6 +1,20 @@
 @use "./variables.scss" as *;
 
-// put your custom CSS here!
+// Tao-style non-math typography (sans body, serif headings/blockquotes).
+// Math (.katex, .math, .tikz-output) unchanged — uses KaTeX / dvisvgm pipeline.
+:root {
+  --bodyFont:
+    "Noto Sans SC", Verdana, Helvetica, Arial, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --headerFont:
+    "Noto Serif SC", "Times New Roman", Times, "Songti SC", "STSong", "SimSun", serif;
+  --titleFont: var(--headerFont);
+  --codeFont: "IBM Plex Mono", "Courier New", Courier, ui-monospace, monospace;
+}
+
+article blockquote {
+  font-family: var(--headerFont);
+}
 
 // TikZ SVG output (dvisvgm pipeline) — center figures in article body
 article {

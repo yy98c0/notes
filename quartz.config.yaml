@@ -15,9 +15,10 @@ configuration:
   theme:
     fontOrigin: googleFonts
     cdnCaching: true
+    # Tao-style: sans body + serif headings; Noto SC covers zh-CN + Latin
     typography:
-      header: Schibsted Grotesk
-      body: Source Sans Pro
+      header: Noto Serif SC
+      body: Noto Sans SC
       code: IBM Plex Mono
     colors:
       lightMode:

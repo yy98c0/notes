@@ -36,6 +36,9 @@ export function isolateTikzFences(file: VFile): string {
 
 const CACHE_DIR = path.join(process.cwd(), ".quartz", "tikz-cache")
 
+/** Bump when SVG post-processing changes (invalidates .quartz/tikz-cache). */
+const TIKZ_SVG_CACHE_VERSION = "strip-clip-v1"
+
 interface Options {
   enableTikZ: boolean
   texPackages?: Record<string, string>
@@ -64,7 +67,11 @@ const TEX_LOG_MARKERS =
   /^!\s|^l\.\d+|^Emergency stop|^Undefined control sequence|^LaTeX Error|^Missing \$|^Runaway argument|^TeX capacity exceeded/m
 
 function cacheKey(source: string, opts: CompileOptions): string {
-  return createHash("sha256").update(source).update(JSON.stringify(opts)).digest("hex")
+  return createHash("sha256")
+    .update(TIKZ_SVG_CACHE_VERSION)
+    .update(source)
+    .update(JSON.stringify(opts))
+    .digest("hex")
 }
 
 function readCache(key: string): string | null {

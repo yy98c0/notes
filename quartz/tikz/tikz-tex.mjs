@@ -265,14 +265,22 @@ function patchPathTag(tag, stack) {
   if (stroke) styleParts.push(`stroke:${stroke}`)
   const styleDecl = styleParts.join(";")
 
-  if (/\bstyle=(["'])/i.test(tag)) {
-    return tag.replace(/\bstyle=(["'])([^"']*)\1/i, (_, quote, existing) => {
+  let patched = tag
+  if (fill && !/\bfill=/i.test(patched)) {
+    patched = patched.replace(/^<path\b/i, `<path fill="${fill}"`)
+  }
+  if (stroke && !/\bstroke=/i.test(patched)) {
+    patched = patched.replace(/^<path\b/i, `<path stroke="${stroke}"`)
+  }
+
+  if (/\bstyle=(["'])/i.test(patched)) {
+    return patched.replace(/\bstyle=(["'])([^"']*)\1/i, (_, quote, existing) => {
       const merged = existing ? `${existing};${styleDecl}` : styleDecl
       return `style=${quote}${merged}${quote}`
     })
   }
 
-  return tag.replace(/^<path\b/i, `<path style="${styleDecl}"`)
+  return patched.replace(/^<path\b/i, `<path style="${styleDecl}"`)
 }
 
 /**
@@ -319,4 +327,80 @@ export function materializeSvgGroupFills(svg) {
   }
 
   return out + svg.slice(lastIndex)
+}
+
+const CLIP_PATH_ON_G = /\bclip-path\s*=\s*["']url\(#/i
+
+/**
+ * Flatten dvisvgm surf output: one &lt;path&gt; per nested &lt;g&gt; chain under clip-path.
+ * Chrome skips rendering when clip-path wraps ~300 levels of nested groups (Safari does not).
+ */
+export function flattenClipPathNestedGroups(svg) {
+  const tagRe = /<\/?(?:g\b[^>]*|path\b[^>]*|defs\b[^>]*|clipPath\b[^>]*|mask\b[^>]*|marker\b[^>]*|pattern\b[^>]*|symbol\b[^>]*|\/(?:defs|clipPath|mask|marker|pattern|symbol))>/gi
+  let out = ""
+  let lastIndex = 0
+  let clipDepth = 0
+  let clipOpenTag = ""
+  const clipPaths = []
+
+  for (const match of svg.matchAll(tagRe)) {
+    const index = match.index ?? 0
+    const before = svg.slice(lastIndex, index)
+    const tag = match[0]
+
+    if (clipDepth === 0) {
+      if (/^<g\b/i.test(tag) && CLIP_PATH_ON_G.test(tag)) {
+        out += before
+        clipOpenTag = tag
+        clipDepth = 1
+        clipPaths.length = 0
+      } else {
+        out += before + tag
+      }
+    } else if (/^<\/g>/i.test(tag)) {
+      clipDepth -= 1
+      if (clipDepth === 0) {
+        out += clipOpenTag + clipPaths.join("") + "</g>"
+        clipOpenTag = ""
+        clipPaths.length = 0
+      }
+    } else if (/^<g\b/i.test(tag)) {
+      clipDepth += 1
+    } else if (/^<path\b/i.test(tag)) {
+      clipPaths.push(tag)
+    } else {
+      clipPaths.push(tag)
+    }
+
+    lastIndex = index + tag.length
+  }
+
+  if (clipDepth > 0 && clipOpenTag) {
+    out += clipOpenTag + clipPaths.join("") + "</g>"
+  }
+
+  return out + svg.slice(lastIndex)
+}
+
+/**
+ * Remove clip-path wrappers after flatten — Chrome still skips large clipped path lists
+ * even at depth 1 (Safari renders fine). Surf plots only need axis bounds cosmetically.
+ */
+export function stripClipPathForChrome(svg) {
+  const clipIds = []
+  const out = svg.replace(/<g\b([^>]*)>/gi, (full, attrs) => {
+    const clipMatch = attrs.match(/\bclip-path\s*=\s*(["'])url\(#([^)]+)\)\1/i)
+    if (!clipMatch) return full
+    clipIds.push(clipMatch[2])
+    const stripped = attrs.replace(/\s*clip-path\s*=\s*(["'])url\(#([^)]+)\)\1/i, "").trim()
+    return stripped ? `<g ${stripped}>` : "<g>"
+  })
+  let cleaned = out
+  for (const id of [...new Set(clipIds)]) {
+    cleaned = cleaned.replace(
+      new RegExp(`<clipPath\\s+id="${id}"[^>]*>[\\s\\S]*?</clipPath>\\s*`, "gi"),
+      "",
+    )
+  }
+  return cleaned
 }
