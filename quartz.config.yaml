@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./quartz/plugins/quartz-plugins.schema.json
 configuration:
-  pageTitle: YY Notes
+  pageTitle: notes
   pageTitleSuffix: ""
   enableSPA: true
   enablePopovers: true
@@ -15,7 +15,6 @@ configuration:
   theme:
     fontOrigin: googleFonts
     cdnCaching: true
-    # Tao-style: sans body + serif headings; Noto SC covers zh-CN + Latin
     typography:
       header: Noto Serif SC
       body: Noto Sans SC
@@ -149,7 +148,7 @@ plugins:
       position: left
       priority: 10
   - source: github:quartz-community/darkmode
-    enabled: true
+    enabled: false
     layout:
       position: left
       priority: 30
