@@ -1,4 +1,5 @@
 @use "./variables.scss" as *;
+@use "./theorem.scss";
 
 // Tao-style non-math typography (sans body, serif headings/blockquotes).
 // Math (.katex, .math, .tikz-output) unchanged — uses KaTeX / dvisvgm pipeline.
