@@ -1,4 +1,4 @@
-name: Deploy Quartz site to GitHub Pages
+name: Deploy Quartz site
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
@@ -60,12 +60,17 @@ jobs:
           name: public-build-failed
           path: public/
           retention-days: 3
-      - name: Upload artifact
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: public
+          path: public/
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
-  deploy:
+  deploy-pages:
     needs: build
     environment:
       name: github-pages
@@ -75,3 +80,31 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-ecs:
+    needs: build
+    if: ${{ secrets.ECS_SSH_PRIVATE_KEY != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download site artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: public
+          path: public/
+      - name: Setup SSH for rsync
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ECS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.ECS_SSH_HOST }}" >> ~/.ssh/known_hosts
+      - name: Deploy to ECS via rsync
+        run: |
+          rsync -avzr --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            public/ \
+            "${{ secrets.ECS_SSH_USER }}@${{ secrets.ECS_SSH_HOST }}:${{ secrets.ECS_DEPLOY_PATH }}/"
+      - name: Fix permissions on ECS
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${{ secrets.ECS_SSH_USER }}@${{ secrets.ECS_SSH_HOST }}" \
+            "chown -R www-data:www-data ${{ secrets.ECS_DEPLOY_PATH }} 2>/dev/null || chown -R nginx:nginx ${{ secrets.ECS_DEPLOY_PATH }} 2>/dev/null || true"
