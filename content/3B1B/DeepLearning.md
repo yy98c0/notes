@@ -1,7 +1,7 @@
 ---
 publish: true
-created: 2026-02-07T13:17:16.616+08:00
-modified: 2026-06-04T17:47:30.335+08:00
+created: 2026-02-06T17:36:31.728+08:00
+modified: 2026-06-05T17:55:27.572+08:00
 ---
 
 # MLP  Multi-Layer Perceptron
