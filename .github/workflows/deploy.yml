@@ -83,7 +83,6 @@ jobs:
 
   deploy-ecs:
     needs: build
-    if: ${{ secrets.ECS_SSH_PRIVATE_KEY != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Download site artifact
