@@ -1,0 +1,105 @@
+/* bigy.cc · Home Dock — aligned with sites/home-dock + splash dock size/pad
+ *
+ * Geometry contract (splash docked resting state must match):
+ *   fixed; top/left = pad + safe-area; width = height = size (68/20 · ≤480 → 58/14)
+ *
+ * Cross-document View Transition: shared name with splash
+ *   `.hero-shell[data-docked="true"]` → view-transition-name: bigy-home-dock
+ */
+
+@view-transition {
+  navigation: auto;
+}
+
+.bigy-home-dock {
+  --bigy-home-dock-size: 68px;
+  --bigy-home-dock-pad: 20px;
+
+  position: fixed;
+  z-index: 9000;
+  top: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-top, 0px));
+  left: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-left, 0px));
+  width: var(--bigy-home-dock-size);
+  height: var(--bigy-home-dock-size);
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+  outline: none;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  view-transition-name: bigy-home-dock;
+}
+
+.bigy-home-dock:hover,
+.bigy-home-dock:focus-visible {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.bigy-home-dock:focus-visible {
+  outline: none;
+}
+
+.bigy-home-dock__icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  background: transparent;
+  /* Dark resting → 影 */
+  filter:
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 14px 28px rgba(0, 0, 0, 0.35));
+  transition: filter 200ms ease;
+}
+
+.bigy-home-dock:hover .bigy-home-dock__icon,
+.bigy-home-dock:focus-visible .bigy-home-dock__icon {
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.7))
+    drop-shadow(0 0 12px rgba(34, 102, 153, 0.65))
+    drop-shadow(0 0 22px rgba(250, 116, 62, 0.45))
+    drop-shadow(0 10px 20px rgba(0, 0, 0, 0.45));
+}
+
+/* Quartz theme (saved-theme), not prefers-color-scheme */
+:root[saved-theme="light"] .bigy-home-dock__icon {
+  filter:
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 10px rgba(34, 102, 153, 0.45))
+    drop-shadow(0 0 20px rgba(250, 116, 62, 0.35));
+}
+
+:root[saved-theme="light"] .bigy-home-dock:hover .bigy-home-dock__icon,
+:root[saved-theme="light"] .bigy-home-dock:focus-visible .bigy-home-dock__icon {
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 1))
+    drop-shadow(0 0 14px rgba(34, 102, 153, 0.65))
+    drop-shadow(0 0 28px rgba(250, 116, 62, 0.5));
+}
+
+@media (max-width: 480px) {
+  .bigy-home-dock {
+    --bigy-home-dock-size: 58px;
+    --bigy-home-dock-pad: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bigy-home-dock,
+  .bigy-home-dock__icon {
+    transition: none;
+  }
+
+  .bigy-home-dock:hover,
+  .bigy-home-dock:focus-visible {
+    transform: none;
+  }
+}
