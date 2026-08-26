@@ -17,7 +17,7 @@ configuration:
     cdnCaching: true
     typography:
       header: Noto Serif SC
-      body: Noto Sans SC
+      body: Noto Serif SC
       code: IBM Plex Mono
     colors:
       lightMode:

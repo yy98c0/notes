@@ -1,12 +1,13 @@
 @use "./variables.scss" as *;
 @use "./theorem.scss";
 
-// Tao-style non-math typography (sans body, serif headings/blockquotes).
-// Math (.katex, .math, .tikz-output) unchanged — uses KaTeX / dvisvgm pipeline.
+// Tao-style non-math typography (serif body: zh Songti + en Times New Roman,
+// serif headings/blockquotes). Math (.katex, .math, .tikz-output) unchanged —
+// uses KaTeX / dvisvgm pipeline.
 :root {
+  // Latin/digits first (Times New Roman), CJK falls back to Songti (Noto Serif SC)
   --bodyFont:
-    "Noto Sans SC", Verdana, Helvetica, Arial, "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    "Times New Roman", "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
   --headerFont:
     "Noto Serif SC", "Times New Roman", Times, "Songti SC", "STSong", "SimSun", serif;
   --titleFont: var(--headerFont);
