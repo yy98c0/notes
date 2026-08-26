@@ -100,15 +100,15 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.ECS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.ECS_SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H -p 2222 "${{ secrets.ECS_SSH_HOST }}" >> ~/.ssh/known_hosts
       - name: Deploy to ECS via rsync
         run: |
           rsync -avzr --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -p 2222" \
             public/ \
             "${{ secrets.ECS_SSH_USER }}@${{ secrets.ECS_SSH_HOST }}:${{ secrets.ECS_DEPLOY_PATH }}/"
       - name: Fix permissions on ECS
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -p 2222 \
             "${{ secrets.ECS_SSH_USER }}@${{ secrets.ECS_SSH_HOST }}" \
             "chown -R www-data:www-data ${{ secrets.ECS_DEPLOY_PATH }} 2>/dev/null || chown -R nginx:nginx ${{ secrets.ECS_DEPLOY_PATH }} 2>/dev/null || true"
