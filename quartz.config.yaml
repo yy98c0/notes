@@ -170,6 +170,7 @@ plugins:
     options:
       links:
         GitHub: https://github.com/yy98c0/notes
+        黑ICP备2026010248号-1: https://beian.miit.gov.cn
   - source: github:quartz-community/spacer
     enabled: true
     options: {}
