@@ -21,7 +21,7 @@ export interface HomeDockOptions {
   nav?: TopBarItem[]
 }
 
-const DEFAULT_HREF = "https://bigy.cc/home/"
+const DEFAULT_HREF = "https://bigy.cc/"
 const DEFAULT_LABEL = "返回首页"
 
 /** All sections are clickable; placeholders exist for about / blog connectivity tests. */
