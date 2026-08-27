@@ -1,27 +1,123 @@
-/* bigy.cc · Home Dock — aligned with sites/home-dock + splash dock size/pad
+/* bigy.cc · Site chrome: Home Dock + Top Bar
  *
- * Geometry contract (splash docked resting state must match):
- *   fixed; top/left = pad + safe-area; width = height = size (68/20 · ≤480 → 58/14)
+ * Layout contract:
+ *   1) :root reserves a top strip (--bigy-chrome-strip)
+ *   2) body padding-top shifts page content below the strip
+ *   3) .bigy-site-chrome is fixed inside that strip (SVG + tabs aligned)
  *
- * Cross-document View Transition: shared name with splash
- *   `.hero-shell[data-docked="true"]` → view-transition-name: bigy-home-dock
+ * Dock geometry (splash docked resting must match SVG box):
+ *   desktop 44/10 · ≤800px → 36/6
+ * Edge fade (replaces hairline): --bigy-chrome-edge (Comeau short mask blur)
+ *
+ * Cross-document VT: #bigy-home-dock → view-transition-name: bigy-home-dock
  */
+
+@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700&display=swap");
 
 @view-transition {
   navigation: auto;
 }
 
-.bigy-home-dock {
-  --bigy-home-dock-size: 68px;
-  --bigy-home-dock-pad: 20px;
+:root {
+  --bigy-home-dock-size: 44px;
+  --bigy-home-dock-pad: 10px;
+  --bigy-top-bar-gap: 10px;
+  --bigy-chrome-edge: 8px;
+  /* pad + icon row + pad → reserved top bar height (safe-area included) */
+  --bigy-chrome-strip: calc(
+    env(safe-area-inset-top, 0px) + var(--bigy-home-dock-pad) + var(--bigy-home-dock-size) +
+      var(--bigy-home-dock-pad)
+  );
+}
 
+/* Align with Quartz $mobile (800px) — not only ≤480 */
+@media (max-width: 800px) {
+  :root {
+    --bigy-home-dock-size: 36px;
+    --bigy-home-dock-pad: 6px;
+    --bigy-top-bar-gap: 8px;
+  }
+}
+
+/* Push Quartz (and any host page) below the reserved chrome strip */
+html {
+  scroll-padding-top: var(--bigy-chrome-strip);
+}
+
+body {
+  padding-top: var(--bigy-chrome-strip) !important;
+  box-sizing: border-box;
+}
+
+.bigy-site-chrome {
+  /* Full-bleed top strip (not just the icon+tabs cluster) */
   position: fixed;
   z-index: 9000;
-  top: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-top, 0px));
-  left: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-left, 0px));
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--bigy-chrome-strip);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--bigy-top-bar-gap);
+  margin: 0;
+  padding-top: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-top, 0px));
+  padding-bottom: var(--bigy-home-dock-pad);
+  padding-left: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--bigy-home-dock-pad) + env(safe-area-inset-right, 0px));
+  border: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  /* Keep visible so dock drop-shadow glow can escape; no backdrop-filter here
+     (backdrop-filter on this box forces browsers to clip descendants). */
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Near-opaque bar body (sibling layer — does NOT clip SVG glow) */
+.bigy-site-chrome::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--light, #0c0c0c) 98%, transparent);
+  backdrop-filter: blur(12px) saturate(1.05);
+  -webkit-backdrop-filter: blur(12px) saturate(1.05);
+}
+
+/* Comeau short edge: ~8px blur + mask fade (replaces hairline / long soft band) */
+.bigy-site-chrome::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--bigy-chrome-edge);
+  z-index: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--light, #0c0c0c) 55%, transparent);
+  backdrop-filter: blur(10px) saturate(1.05);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+  box-shadow: none;
+}
+
+.bigy-home-dock {
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 1;
+  flex: 0 0 var(--bigy-home-dock-size);
   width: var(--bigy-home-dock-size);
   height: var(--bigy-home-dock-size);
-  display: block;
+  display: grid;
+  place-items: center;
+  /* NEVER clip — drop-shadow glow must escape the box */
+  overflow: visible;
   margin: 0;
   padding: 0;
   border: 0;
@@ -31,6 +127,8 @@
   -webkit-tap-highlight-color: transparent;
   text-decoration: none;
   outline: none;
+  pointer-events: auto;
+  transform-origin: center center;
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
   view-transition-name: bigy-home-dock;
 }
@@ -48,11 +146,19 @@
   display: block;
   width: 100%;
   height: 100%;
+  max-width: none !important;
+  max-height: none !important;
+  /* Quartz base.scss sets img { margin: 1rem 0; border-radius: 5px } — undo that */
+  margin: 0 !important;
+  border-radius: 0 !important;
   object-fit: contain;
+  object-position: center;
   pointer-events: none;
   user-select: none;
   background: transparent;
-  /* Dark resting → 影 */
+  content-visibility: visible;
+  /* Artwork is slightly left-weighted in the Twemoji viewBox; nudge for optical center */
+  transform: translate(2%, 0);
   filter:
     drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55))
     drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5))
@@ -69,7 +175,93 @@
     drop-shadow(0 10px 20px rgba(0, 0, 0, 0.45));
 }
 
-/* Quartz theme (saved-theme), not prefers-color-scheme */
+.bigy-top-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: clamp(0.85rem, 2.4vw, 1.5rem);
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.bigy-top-bar__link {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: "Bodoni Moda", "Didot", "Bodoni MT", Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-size: clamp(0.88rem, 2vw, 1.05rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: rgba(245, 245, 245, 0.88);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 0 1px rgba(255, 255, 255, 0.08);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+  transition:
+    color 200ms ease,
+    text-shadow 200ms ease,
+    filter 200ms ease,
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.bigy-top-bar__link:hover,
+.bigy-top-bar__link:focus-visible {
+  color: #fff;
+  outline: none;
+  transform: translateY(-1px);
+  text-shadow:
+    0 0 5px rgba(255, 255, 255, 0.7),
+    0 0 12px rgba(34, 102, 153, 0.65),
+    0 0 22px rgba(250, 116, 62, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.7))
+    drop-shadow(0 0 12px rgba(34, 102, 153, 0.65))
+    drop-shadow(0 0 22px rgba(250, 116, 62, 0.45));
+}
+
+/* Current section: still clickable; quieter resting look, full glow on hover */
+.bigy-top-bar__link.is-current {
+  color: rgba(245, 245, 245, 0.45);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  filter: none;
+}
+
+.bigy-top-bar__link.is-current:hover,
+.bigy-top-bar__link.is-current:focus-visible {
+  color: #fff;
+  text-shadow:
+    0 0 5px rgba(255, 255, 255, 0.7),
+    0 0 12px rgba(34, 102, 153, 0.65),
+    0 0 22px rgba(250, 116, 62, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.7))
+    drop-shadow(0 0 12px rgba(34, 102, 153, 0.65))
+    drop-shadow(0 0 22px rgba(250, 116, 62, 0.45));
+}
+
+/* Quartz theme (saved-theme) */
 :root[saved-theme="light"] .bigy-home-dock__icon {
   filter:
     drop-shadow(0 0 3px rgba(255, 255, 255, 0.95))
@@ -85,21 +277,56 @@
     drop-shadow(0 0 28px rgba(250, 116, 62, 0.5));
 }
 
-@media (max-width: 480px) {
-  .bigy-home-dock {
-    --bigy-home-dock-size: 58px;
-    --bigy-home-dock-pad: 14px;
+:root[saved-theme="light"] .bigy-top-bar__link {
+  color: rgba(20, 20, 24, 0.82);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 1px rgba(0, 0, 0, 0.08);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12));
+}
+
+:root[saved-theme="light"] .bigy-top-bar__link:hover,
+:root[saved-theme="light"] .bigy-top-bar__link:focus-visible,
+:root[saved-theme="light"] .bigy-top-bar__link.is-current:hover,
+:root[saved-theme="light"] .bigy-top-bar__link.is-current:focus-visible {
+  color: #111;
+  text-shadow:
+    0 0 5px rgba(255, 255, 255, 1),
+    0 0 12px rgba(34, 102, 153, 0.55),
+    0 0 22px rgba(250, 116, 62, 0.4);
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 12px rgba(34, 102, 153, 0.55))
+    drop-shadow(0 0 22px rgba(250, 116, 62, 0.4));
+}
+
+:root[saved-theme="light"] .bigy-top-bar__link.is-current {
+  color: rgba(20, 20, 24, 0.4);
+  text-shadow: none;
+  filter: none;
+}
+
+@media (max-width: 800px) {
+  .bigy-top-bar {
+    gap: 0.7rem;
+  }
+
+  .bigy-top-bar__link {
+    font-size: clamp(0.8rem, 3.2vw, 0.95rem);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .bigy-home-dock,
-  .bigy-home-dock__icon {
+  .bigy-home-dock__icon,
+  .bigy-top-bar__link {
     transition: none;
   }
 
   .bigy-home-dock:hover,
-  .bigy-home-dock:focus-visible {
+  .bigy-home-dock:focus-visible,
+  .bigy-top-bar__link:hover,
+  .bigy-top-bar__link:focus-visible {
     transform: none;
   }
 }
