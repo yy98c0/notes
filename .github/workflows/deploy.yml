@@ -52,6 +52,8 @@ jobs:
         run: npm ci
       - name: Install Quartz plugins
         run: npx quartz plugin install --from-config
+      - name: Default theme to dark (no localStorage yet)
+        run: npm run patch-darkmode-default
       - name: Clear TikZ cache for reproducible CI builds
         run: rm -rf .quartz/tikz-cache
       - name: Build Quartz

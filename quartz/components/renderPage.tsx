@@ -347,6 +347,28 @@ export function renderPage(
     <html lang={lang} dir={direction}>
       <Head {...componentData} />
       <body data-slug={slug} data-basepath={basePath}>
+        {/* Hue-preserving luminance invert for dark-mode figures
+            https://monochrome.sutic.nu/2024/02/25/hue-preserving-invert-css-filter-for-dark-mode.html */}
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          style="position:absolute;width:0;height:0;overflow:hidden"
+        >
+          <defs>
+            <filter id="invert-luminance" color-interpolation-filters="linearRGB">
+              <feComponentTransfer>
+                <feFuncR type="gamma" amplitude="1" exponent="0.5" offset="0" />
+                <feFuncG type="gamma" amplitude="1" exponent="0.5" offset="0" />
+                <feFuncB type="gamma" amplitude="1" exponent="0.5" offset="0" />
+                <feFuncA type="gamma" amplitude="1" exponent="1" offset="0" />
+              </feComponentTransfer>
+              <feColorMatrix
+                type="matrix"
+                values="1.000 -1.000 -1.000 0.000 1.000 -1.000 1.000 -1.000 0.000 1.000 -1.000 -1.000 1.000 0.000 1.000 0.000 0.000 0.000 1.000 0.000"
+              />
+            </filter>
+          </defs>
+        </svg>
         {frame.css && <style dangerouslySetInnerHTML={{ __html: frame.css }} />}
         <div id="quartz-root" class="page" data-frame={frame.name}>
           <Body {...componentData}>

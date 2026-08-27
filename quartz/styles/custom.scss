@@ -58,3 +58,33 @@ article {
     }
   }
 }
+
+// Text selection highlight (inspired by brianlovin.com ::selection)
+::selection {
+  color: rgb(0, 102, 219);
+  background-color: rgba(0, 154, 250, 0.1);
+}
+
+:root[saved-theme="dark"] ::selection {
+  color: rgb(255, 107, 1);
+  background-color: rgba(240, 104, 0, 0.1);
+}
+
+// Dark-mode figure adaptation: hue-preserving luminance invert
+// (SVG filter #invert-luminance injected in renderPage.tsx)
+:root[saved-theme="dark"] {
+  article {
+    img:not([src$=".gif"]):not(.no-invert),
+    figure:not([data-rehype-pretty-code-figure]) > img,
+    figure:not([data-rehype-pretty-code-figure]) svg,
+    .tikz-output svg {
+      filter: url(#invert-luminance);
+    }
+
+    // Opt out: ![caption|no-invert] or class="no-invert"
+    img.no-invert,
+    img[alt*="no-invert"] {
+      filter: none;
+    }
+  }
+}
